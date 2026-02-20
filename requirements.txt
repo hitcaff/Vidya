@@ -1,0 +1,22 @@
+# =============================================================================
+# requirements.txt — Vidya AI Teaching Bot
+# Install with: pip install -r requirements.txt
+# =============================================================================
+
+# Core voice pipeline
+pipecat-ai[daily,openai,sarvam]
+
+# Backend server
+fastapi
+uvicorn[standard]
+httpx
+
+# Utilities
+python-dotenv
+loguru
+
+# Phase 2 additions (uncomment when you reach Phase 2):
+# aiosqlite       # async SQLite for user profiles
+
+# Phase 4 additions (uncomment when you reach Phase 4):
+# websockets      # WebSocket support for visual learning signals
