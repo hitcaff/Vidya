@@ -2,15 +2,18 @@
 # agent.py
 # Main Pipecat pipeline for Vidya — AI Literacy Teaching Bot.
 #
-# Phase 1: Basic voice bot with Sarvam STT + GPT-4o + Sarvam TTS.
-# The pipeline is wired using providers.py — this file never imports
-# from OpenAI, Sarvam, or Daily directly.
+# Phase 2: Added onboarding flow + user profiles + session memory.
 #
-# Run:   python agent.py
-# Test:  open the Daily room URL printed in the terminal
+# New behaviour:
+#   - New user  → runs 7-question onboarding → saves profile to DB
+#   - Returning user → loads profile from DB → resumes where they left off
+#
+# Run:  py -3.11 agent.py
+# Open: http://localhost:7860/client
 # =============================================================================
-
+from pipecat.frames.frames import TTSSpeakFrame
 import os
+import uuid
 from loguru import logger
 from dotenv import load_dotenv
 
@@ -24,136 +27,215 @@ from pipecat.runner.types import RunnerArguments
 from pipecat.runner.utils import create_transport
 
 from providers import get_llm, get_stt, get_tts, get_transport_params
+from db import init_db, get_user, save_user, update_session_count
+from onboarding import build_profile_from_onboarding
+from prompt_builder import build_prompt, get_onboarding_prompt
 
 load_dotenv(override=True)
 
+
 # =============================================================================
-# VIDYA SYSTEM PROMPT — Phase 1
-# This is a basic version. It will be replaced in Phase 3 with a fully
-# dynamic prompt built from the user's profile and curriculum level.
+# Session state — tracks each connected student in memory
 # =============================================================================
 
-VIDYA_SYSTEM_PROMPT = """
-You are Vidya, a warm and patient AI teacher. Your only purpose is to help
-uneducated adults and children learn — starting with basic literacy and numeracy.
+class StudentSession:
+    """
+    Holds the in-memory state for one connected student.
+    Created when they connect, discarded when they disconnect.
+    """
+    def __init__(self, session_id: str):
+        self.session_id     = session_id
+        self.user           = None          # Loaded from DB (None if new)
+        self.is_onboarding  = False         # True while running onboarding
+        self.onboarding_answers = {}        # Collects answers during onboarding
+        self.messages       = []            # Full conversation history
 
-CORE RULES — never break these:
-- Speak in simple, everyday words. No jargon. No complex sentences.
-- Keep every response to 2-3 sentences maximum.
-- Always end with a simple question or small task for the student.
-- Never make the student feel bad for a wrong answer. Always say something kind first.
-- Celebrate every correct answer with genuine enthusiasm.
-- Speak as if you are talking to someone who has never been to school.
-- Always respond in simple English only, regardless of what language the student speaks.
-- Be warm, encouraging, and endlessly patient.
 
-RIGHT NOW in Phase 1, you are just getting to know the student.
-Greet them warmly, ask their name, and ask what they would like to learn.
-"""
-
+# =============================================================================
+# Main bot entry point
+# =============================================================================
 
 async def bot(runner_args: RunnerArguments):
     """
-    Main bot entry point. Pipecat calls this when the agent starts.
-    Builds the pipeline and waits for a user to connect.
+    Main Pipecat entry point.
+    Builds the pipeline and manages student sessions.
     """
 
+    # Initialise the database on startup
+    await init_db()
+
     # ------------------------------------------------------------------
-    # Step 1: Create transport — free WebRTC, no account needed
+    # Transport + AI services — all via providers.py
     # ------------------------------------------------------------------
     transport = await create_transport(
         runner_args,
-        {
-            "webrtc": lambda: get_transport_params(),
-        },
+        {"webrtc": lambda: get_transport_params()},
     )
 
-    # ------------------------------------------------------------------
-    # Step 2: Initialise AI services — all via providers.py
-    # ------------------------------------------------------------------
-    stt = get_stt()    # Sarvam Saarika v2.5 — auto language detect
-    tts = get_tts()    # Sarvam Bulbul v3 — pace=0.8, slow clear speech
-    llm = get_llm()    # OpenAI GPT-4o — the teaching brain
+    stt = get_stt()
+    tts = get_tts()
+    llm = get_llm()
 
-    logger.info("AI services initialised via providers.py")
+    logger.info("Vidya Phase 2 ready")
     logger.info(f"  STT: {stt.__class__.__name__}")
     logger.info(f"  LLM: {llm.__class__.__name__}")
     logger.info(f"  TTS: {tts.__class__.__name__}")
 
     # ------------------------------------------------------------------
-    # Step 3: Set up conversation context with Vidya's system prompt
+    # Conversation context — starts empty, filled per student
     # ------------------------------------------------------------------
-    messages = [
-        {
-            "role": "system",
-            "content": VIDYA_SYSTEM_PROMPT,
-        }
-    ]
-    context = LLMContext(messages)
+    messages = []
+    context  = LLMContext(messages)
     context_aggregator = LLMContextAggregatorPair(context)
 
     # ------------------------------------------------------------------
-    # Step 4: Build the Pipecat pipeline
-    #
-    # Audio flows in this exact sequence:
-    #   Browser Mic
-    #     → Daily WebRTC transport.input()
-    #     → Sarvam STT (speech → text)
-    #     → context_aggregator.user() (adds user turn to history)
-    #     → GPT-4o LLM (generates teaching response)
-    #     → Sarvam TTS (text → speech)
-    #     → Daily WebRTC transport.output()
-    #     → Browser Speaker
-    #     → context_aggregator.assistant() (saves assistant turn to history)
+    # Pipeline
     # ------------------------------------------------------------------
     pipeline = Pipeline([
-        transport.input(),              # Receive audio from browser
-        stt,                            # Convert speech to text
-        context_aggregator.user(),      # Add user message to context
-        llm,                            # Generate response
-        tts,                            # Convert response to speech
-        transport.output(),             # Send audio to browser
-        context_aggregator.assistant(), # Save assistant response to context
+        transport.input(),
+        stt,
+        context_aggregator.user(),
+        llm,
+        tts,
+        transport.output(),
+        context_aggregator.assistant(),
     ])
 
     task = PipelineTask(pipeline)
 
-    # ------------------------------------------------------------------
-    # Step 5: Event handlers
-    # ------------------------------------------------------------------
+    # Active session state
+    current_session = StudentSession(str(uuid.uuid4()))
 
-    @transport.event_handler("on_client_connected")
-    async def on_client_connected(transport, client):
-        """
-        Called when a user opens the browser and connects.
-        Vidya introduces herself and starts the conversation.
-        """
-        logger.info(f"Student connected: {client}")
+    # ------------------------------------------------------------------
+    # Helper: set the system prompt
+    # ------------------------------------------------------------------
+    def set_system_prompt(prompt: str):
+        """Replaces the system message in the conversation."""
+        messages.clear()
+        messages.append({"role": "system", "content": prompt})
 
-        # Trigger Vidya to speak her opening greeting
+    # ------------------------------------------------------------------
+    # Helper: check if onboarding is complete
+    # ------------------------------------------------------------------
+    def check_onboarding_complete(text: str) -> bool:
+        """Returns True if the LLM signalled onboarding is done."""
+        return "[ONBOARDING_COMPLETE]" in text
+
+    # ------------------------------------------------------------------
+    # Helper: start onboarding for a new student
+    # ------------------------------------------------------------------
+    async def start_onboarding():
+    	current_session.is_onboarding = True
+    	messages.clear()
+    	messages.append({
+        	"role": "system",
+        	"content": get_onboarding_prompt()
+    })
+    # Force Vidya to say the exact greeting via TTS directly
+    # bypassing the LLM entirely for the opening line
+    await task.queue_frames([
+        TTSSpeakFrame("Hello! I am Vidya, your teacher. I am so happy to meet you! What is your name?")
+    ])
+    logger.info(f"Onboarding started for session {current_session.session_id}")
+    messages.append({
+        "role": "assistant", 
+        "content": "Hello! I am Vidya, your teacher. I am so happy to meet you! What is your name?"
+    })
+    messages.append({
+        "role": "system",
+        "content": get_onboarding_prompt()
+    })
+    await task.queue_frames([LLMRunFrame()])
+    logger.info(f"Onboarding started for session {current_session.session_id}")
+
+    # ------------------------------------------------------------------
+    # Helper: finish onboarding, save profile, start teaching
+    # ------------------------------------------------------------------
+    async def complete_onboarding(llm_response: str):
+        current_session.is_onboarding = False
+
+        # Build and save the user profile
+        profile = build_profile_from_onboarding(
+            current_session.session_id,
+            current_session.onboarding_answers
+        )
+        current_session.user = await save_user(current_session.session_id, profile)
+
+        logger.info(f"Onboarding complete — {profile['name']} saved to DB")
+
+        # Switch to the teaching prompt
+        teaching_prompt = build_prompt(current_session.user)
+        set_system_prompt(teaching_prompt)
+
+        # Vidya transitions smoothly into the first lesson
         messages.append({
             "role": "system",
             "content": (
-                "A student has just connected. "
-                "Greet them warmly in a friendly voice. "
-                "Introduce yourself as Vidya. "
-                "Ask their name and what language they speak. "
-                "Keep it to 2-3 sentences."
+                f"Onboarding is complete. {profile['name']} is ready to learn. "
+                f"Warmly welcome them and begin their very first lesson. "
+                f"Keep it gentle and exciting."
             )
         })
         await task.queue_frames([LLMRunFrame()])
 
+    # ------------------------------------------------------------------
+    # Helper: start a session for a returning student
+    # ------------------------------------------------------------------
+    async def start_returning_session(user: dict):
+        current_session.user = user
+        await update_session_count(current_session.session_id)
+
+        teaching_prompt = build_prompt(user)
+        set_system_prompt(teaching_prompt)
+
+        messages.append({
+    "role": "system",
+    "content": (
+        "You are Vidya, a teacher. A student just connected. "
+        "Your ONLY job is to teach. "
+        "Say EXACTLY this and nothing else: "
+        "Hello! I am Vidya, your teacher. I am so happy to meet you! What is your name?"
+    )
+})
+        await task.queue_frames([LLMRunFrame()])
+        logger.info(f"Returning student: {user['name']} | session #{user['session_count']}")
+
+    # ------------------------------------------------------------------
+    # Event: student connects
+    # ------------------------------------------------------------------
+    @transport.event_handler("on_client_connected")
+    async def on_client_connected(transport, client):
+        logger.info(f"Student connected | session: {current_session.session_id}")
+
+        # Check if this student has been here before
+        existing_user = await get_user(current_session.session_id)
+
+        if existing_user and existing_user.get("onboarding_done"):
+            # Returning student — load their profile and resume
+            await start_returning_session(existing_user)
+        else:
+            # New student — run onboarding
+            await start_onboarding()
+
+    # ------------------------------------------------------------------
+    # Event: student disconnects
+    # ------------------------------------------------------------------
     @transport.event_handler("on_client_disconnected")
     async def on_client_disconnected(transport, client):
-        """
-        Called when the user closes the browser tab or disconnects.
-        """
-        logger.info(f"Student disconnected: {client}")
-        # Phase 2 will save session progress to DB here
+        name = current_session.user["name"] if current_session.user else "Unknown"
+        logger.info(f"Student disconnected: {name}")
+        # Phase 5 will save session summary to DB here
         await task.cancel()
 
     # ------------------------------------------------------------------
-    # Step 6: Run the pipeline — waits for connections
+    # Monitor LLM output for onboarding completion signal
+    # Note: In a future version this will use a proper frame processor.
+    # For Phase 2, we check the context after each exchange.
+    # ------------------------------------------------------------------
+    original_push = context_aggregator.assistant().push_frame
+
+    # ------------------------------------------------------------------
+    # Run the pipeline
     # ------------------------------------------------------------------
     runner = PipelineRunner(handle_sigint=runner_args.handle_sigint)
     await runner.run(task)

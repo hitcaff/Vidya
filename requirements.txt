@@ -1,25 +1,24 @@
 # =============================================================================
 # requirements.txt — Vidya AI Teaching Bot
-# Install with: pip install -r requirements.txt
+# Install: py -3.11 -m pip install -r requirements.txt
 # =============================================================================
 
 # Core voice pipeline
-pipecat-ai[daily,openai,sarvam]
+pipecat-ai[sarvam,openai,webrtc]
+pipecat-ai-small-webrtc-prebuilt
 
 # Backend server
 fastapi
 uvicorn[standard]
 httpx
 
+# LLM — free alternative to OpenAI
+groq
+
+# Database — user profiles and progress
+aiosqlite
+
 # Utilities
 python-dotenv
 loguru
-
-# Phase 2 additions (uncomment when you reach Phase 2):
-# aiosqlite       # async SQLite for user profiles
-
-# Phase 4 additions (uncomment when you reach Phase 4):
-# websockets      # WebSocket support for visual learning signals
-#pipecat-ai[webrtc]
-#pipecat-ai-small-webrtc-prebuilt
-#groq
+websockets
