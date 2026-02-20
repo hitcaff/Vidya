@@ -20,3 +20,6 @@ loguru
 
 # Phase 4 additions (uncomment when you reach Phase 4):
 # websockets      # WebSocket support for visual learning signals
+#pipecat-ai[webrtc]
+#pipecat-ai-small-webrtc-prebuilt
+#groq
