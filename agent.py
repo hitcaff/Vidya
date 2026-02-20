@@ -23,7 +23,7 @@ from pipecat.processors.aggregators.llm_response_universal import LLMContextAggr
 from pipecat.runner.types import RunnerArguments
 from pipecat.runner.utils import create_transport
 
-from providers import get_llm, get_stt, get_tts, get_transport_params, get_webrtc_transport_params
+from providers import get_llm, get_stt, get_tts, get_transport_params
 
 load_dotenv(override=True)
 
@@ -44,7 +44,7 @@ CORE RULES — never break these:
 - Never make the student feel bad for a wrong answer. Always say something kind first.
 - Celebrate every correct answer with genuine enthusiasm.
 - Speak as if you are talking to someone who has never been to school.
-- If the student speaks Hindi, Telugu, Tamil, Kannada, or any Indian language — respond in that same language.
+- Always respond in simple English only, regardless of what language the student speaks.
 - Be warm, encouraging, and endlessly patient.
 
 RIGHT NOW in Phase 1, you are just getting to know the student.
@@ -59,13 +59,12 @@ async def bot(runner_args: RunnerArguments):
     """
 
     # ------------------------------------------------------------------
-    # Step 1: Create transport — uses providers.py, never Daily directly
+    # Step 1: Create transport — free WebRTC, no account needed
     # ------------------------------------------------------------------
     transport = await create_transport(
         runner_args,
         {
-            "daily":  lambda: get_transport_params(),
-            "webrtc": lambda: get_webrtc_transport_params(),
+            "webrtc": lambda: get_transport_params(),
         },
     )
 

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vidya — Your Teacher</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: #0f1923; color: #ffffff;
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; padding: 24px 16px;
+    }
+    .header { text-align: center; margin-bottom: 28px; }
+    .header h1 { font-size: 2rem; font-weight: 700; color: #60aaff; letter-spacing: 2px; }
+    .header p { font-size: 0.95rem; color: #8899aa; margin-top: 4px; }
+    .image-card {
+      width: 100%; max-width: 480px; aspect-ratio: 4/3;
+      background: #1a2535; border: 2px dashed #2a3a50;
+      border-radius: 20px; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; margin-bottom: 28px;
+    }
+    .image-card .placeholder { text-align: center; color: #2a3a50; }
+    .image-card .placeholder .icon { font-size: 4rem; display: block; margin-bottom: 12px; }
+    .image-card .placeholder p { font-size: 0.85rem; }
+    .status-bar {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 24px;
+      background: #1a2535; padding: 10px 20px; border-radius: 30px;
+      min-width: 260px; justify-content: center;
+    }
+    .status-dot { width: 10px; height: 10px; border-radius: 50%; background: #444; flex-shrink: 0; }
+    .status-dot.connecting { background: #f59e0b; animation: pulse 1.2s infinite; }
+    .status-dot.connected  { background: #22c55e; }
+    .status-dot.error      { background: #ef4444; }
+    .status-text { font-size: 0.9rem; color: #aabbcc; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    .btn-start {
+      width: 100%; max-width: 320px; padding: 18px 0;
+      font-size: 1.1rem; font-weight: 700; border: none;
+      border-radius: 16px; cursor: pointer; margin-bottom: 16px;
+      background: linear-gradient(135deg, #2563eb, #4f46e5);
+      color: #fff; box-shadow: 0 4px 24px rgba(79,70,229,0.4);
+    }
+    .btn-start:hover { transform: translateY(-2px); }
+    .info-box {
+      width: 100%; max-width: 480px; background: #1a2535;
+      border-left: 3px solid #60aaff; border-radius: 8px;
+      padding: 12px 16px; margin-bottom: 16px;
+      font-size: 0.82rem; color: #8899aa; line-height: 1.6;
+    }
+    .info-box strong { color: #60aaff; }
+    .transcript {
+      width: 100%; max-width: 480px; background: #1a2535;
+      border-radius: 14px; padding: 16px; min-height: 80px;
+      max-height: 200px; overflow-y: auto; margin-top: 8px;
+    }
+    .transcript-line { font-size: 0.85rem; margin-bottom: 6px; padding: 6px 10px; border-radius: 8px; }
+    .transcript-line.student { background: #1e3a5f; color: #93c5fd; }
+    .transcript-line.vidya   { background: #1e3a28; color: #86efac; }
+    .transcript-empty { color: #2a3a50; font-size: 0.85rem; text-align: center; padding-top: 8px; }
+    .footer { margin-top: 28px; font-size: 0.75rem; color: #2a3a50; text-align: center; }
+    input[type=text] {
+      width: 100%; padding: 12px; border-radius: 10px;
+      border: 1px solid #2a3a50; background: #1a2535;
+      color: #fff; font-size: 0.9rem; margin-bottom: 8px;
+    }
+    .connect-btn {
+      width: 100%; padding: 12px; background: #2563eb; color: #fff;
+      border: none; border-radius: 10px; font-size: 1rem; cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🎓 VIDYA</h1>
+    <p>Your personal teacher — speak to start learning</p>
+  </div>
+
+  <!-- IMAGE CARD — reserved for Phase 4 Visual Learning -->
+  <div class="image-card">
+    <div class="placeholder">
+      <span class="icon">📚</span>
+      <p>Your lesson visuals<br>will appear here</p>
+    </div>
+  </div>
+
+  <div class="info-box" id="infoBox">
+    <strong>Before you start:</strong> Make sure both terminals are running —
+    <strong>Terminal 1:</strong> <code>uvicorn backend:app --reload --port 8000</code> &nbsp;|&nbsp;
+    <strong>Terminal 2:</strong> <code>python agent.py</code>
+  </div>
+
+  <div class="status-bar">
+    <div class="status-dot" id="statusDot"></div>
+    <span class="status-text" id="statusText">Ready</span>
+  </div>
+
+  <button class="btn-start" id="mainBtn" onclick="startSession()">
+    🎙️ Start Learning with Vidya
+  </button>
+
+  <div id="urlSection" style="display:none; width:100%; max-width:480px; margin-bottom:16px;">
+    <p style="color:#8899aa; font-size:0.85rem; margin-bottom:8px;">
+      Copy the URL printed in <strong>Terminal 2</strong> (python agent.py) and paste it below:
+    </p>
+    <input type="text" id="agentUrlInput" placeholder="e.g. http://localhost:7860 or the URL shown in terminal" />
+    <button class="connect-btn" onclick="connectToAgent()">Connect to Vidya →</button>
+  </div>
+
+  <div class="transcript" id="transcript">
+    <div class="transcript-empty">What you and Vidya say will appear here...</div>
+  </div>
+
+  <div class="footer">Vidya — AI Literacy Bot &nbsp;•&nbsp; Phase 1</div>
+
+  <script>
+    function setStatus(state, text) {
+      document.getElementById("statusDot").className = "status-dot " + state;
+      document.getElementById("statusText").textContent = text;
+    }
+
+    function startSession() {
+      document.getElementById("urlSection").style.display = "block";
+      document.getElementById("mainBtn").style.display = "none";
+      setStatus("connecting", "Paste the agent URL to connect...");
+    }
+
+    function connectToAgent() {
+      const url = document.getElementById("agentUrlInput").value.trim();
+      if (!url) { alert("Please paste the agent URL from Terminal 2."); return; }
+      setStatus("connecting", "Connecting to Vidya...");
+      window.open(url, "_blank");
+    }
+
+    // Phase 4 placeholders
+    function showImage(assetKey) { console.log("[Visual Phase 4] show:", assetKey); }
+    function hideImage() { console.log("[Visual Phase 4] hide"); }
+  </script>
+</body>
+</html>
