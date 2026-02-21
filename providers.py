@@ -20,10 +20,11 @@ load_dotenv(override=True)
 
 
 def get_llm():
-    from pipecat.services.groq.llm import GroqLLMService
-    return GroqLLMService(
-        api_key=os.getenv("GROQ_API_KEY"),
-        model="llama-3.3-70b-versatile",
+    from pipecat.services.google.llm import GoogleLLMService
+    return GoogleLLMService(
+        api_key=os.getenv("GOOGLE_API_KEY"),
+        model="gemini-2.5-flash",
+        system_instruction="You are Vidya, a warm and patient teacher for uneducated adults. You only teach. You never do small talk. Your first question is always: What is your name?",
     )
 
 
