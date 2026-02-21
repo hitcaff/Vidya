@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
+  <rect width="400" height="300" fill="#0f1923" rx="20"/>
+  <circle cx="200" cy="130" r="90" fill="#FAD7A0" opacity="0.12"/>
+  
+  <text x="200" y="175" 
+        font-family="Georgia, serif" 
+        font-size="120" 
+        font-weight="bold"
+        fill="#FAD7A0"
+        text-anchor="middle"
+        dominant-baseline="middle">14</text>
+  <text x="200" y="245" 
+        font-family="Arial, sans-serif" 
+        font-size="24" 
+        fill="#ffffff"
+        text-anchor="middle"
+        opacity="0.85">Fourteen</text>
+  <text x="200" y="275" 
+        font-family="Arial, sans-serif" 
+        font-size="13" 
+        fill="#FAD7A0"
+        text-anchor="middle"
+        opacity="0.6">Count: ● • ● • ● • ● • ● • ● • ● • ● • ● • ●</text>
+</svg>

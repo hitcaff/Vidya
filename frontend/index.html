@@ -4,138 +4,449 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Vidya — Your Teacher</title>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;800&family=Noto+Sans:wght@400;600&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --bg:        #080e17;
+      --surface:   #0f1923;
+      --surface2:  #162030;
+      --border:    #1e3048;
+      --accent:    #4f9cf9;
+      --accent2:   #7c5cbf;
+      --green:     #22c55e;
+      --yellow:    #f59e0b;
+      --red:       #ef4444;
+      --text:      #e2eaf5;
+      --muted:     #5a7a9a;
+    }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      font-family: "Segoe UI", Arial, sans-serif;
-      background: #0f1923; color: #ffffff;
-      min-height: 100vh; display: flex; flex-direction: column;
-      align-items: center; padding: 24px 16px;
+      font-family: 'Noto Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px 16px 40px;
+      background-image:
+        radial-gradient(ellipse at 20% 20%, rgba(79,156,249,0.06) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 80%, rgba(124,92,191,0.06) 0%, transparent 60%);
     }
-    .header { text-align: center; margin-bottom: 28px; }
-    .header h1 { font-size: 2rem; font-weight: 700; color: #60aaff; letter-spacing: 2px; }
-    .header p { font-size: 0.95rem; color: #8899aa; margin-top: 4px; }
+
+    /* ---------------------------------------------------------------- Header */
+    .header {
+      text-align: center;
+      margin-bottom: 24px;
+      padding-top: 8px;
+    }
+    .header h1 {
+      font-family: 'Baloo 2', cursive;
+      font-size: 2.4rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: 3px;
+    }
+    .header p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-top: 4px;
+      letter-spacing: 0.5px;
+    }
+
+    /* ---------------------------------------------------------------- Image Card */
     .image-card {
-      width: 100%; max-width: 480px; aspect-ratio: 4/3;
-      background: #1a2535; border: 2px dashed #2a3a50;
-      border-radius: 20px; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; margin-bottom: 28px;
+      width: 100%;
+      max-width: 460px;
+      aspect-ratio: 4 / 3;
+      background: var(--surface);
+      border: 2px dashed var(--border);
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      overflow: hidden;
+      position: relative;
+      transition: border-color 0.4s ease, box-shadow 0.4s ease;
     }
-    .image-card .placeholder { text-align: center; color: #2a3a50; }
-    .image-card .placeholder .icon { font-size: 4rem; display: block; margin-bottom: 12px; }
-    .image-card .placeholder p { font-size: 0.85rem; }
+    .image-card.active {
+      border: 2px solid var(--accent);
+      box-shadow: 0 0 40px rgba(79,156,249,0.15), 0 0 80px rgba(79,156,249,0.05);
+    }
+    .image-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      padding: 16px;
+      display: none;
+      animation: fadeIn 0.4s ease;
+    }
+    .image-card.active img { display: block; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    .placeholder {
+      text-align: center;
+      color: var(--border);
+    }
+    .placeholder .icon { font-size: 3.5rem; display: block; margin-bottom: 10px; }
+    .placeholder p { font-size: 0.82rem; line-height: 1.5; }
+    .image-card.active .placeholder { display: none; }
+
+    /* Asset label shown below image */
+    .asset-label {
+      position: absolute;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(79,156,249,0.15);
+      border: 1px solid rgba(79,156,249,0.3);
+      color: var(--accent);
+      font-size: 0.72rem;
+      padding: 3px 10px;
+      border-radius: 20px;
+      display: none;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .image-card.active .asset-label { display: block; }
+
+    /* ---------------------------------------------------------------- Status */
     .status-bar {
-      display: flex; align-items: center; gap: 10px; margin-bottom: 24px;
-      background: #1a2535; padding: 10px 20px; border-radius: 30px;
-      min-width: 260px; justify-content: center;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 8px 20px;
+      border-radius: 30px;
+      min-width: 240px;
+      justify-content: center;
     }
-    .status-dot { width: 10px; height: 10px; border-radius: 50%; background: #444; flex-shrink: 0; }
-    .status-dot.connecting { background: #f59e0b; animation: pulse 1.2s infinite; }
-    .status-dot.connected  { background: #22c55e; }
-    .status-dot.error      { background: #ef4444; }
-    .status-text { font-size: 0.9rem; color: #aabbcc; }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--border);
+      flex-shrink: 0;
+    }
+    .status-dot.connecting { background: var(--yellow); animation: pulse 1.2s infinite; }
+    .status-dot.listening  { background: var(--green);  animation: pulse 1s infinite; }
+    .status-dot.speaking   { background: var(--accent); animation: pulse 0.8s infinite; }
+    .status-dot.connected  { background: var(--green); }
+    .status-dot.error      { background: var(--red); }
+    .status-text { font-size: 0.82rem; color: var(--muted); }
+
+    @keyframes pulse {
+      0%,100% { opacity:1; transform:scale(1); }
+      50%      { opacity:0.4; transform:scale(0.85); }
+    }
+
+    /* ---------------------------------------------------------------- Button */
     .btn-start {
-      width: 100%; max-width: 320px; padding: 18px 0;
-      font-size: 1.1rem; font-weight: 700; border: none;
-      border-radius: 16px; cursor: pointer; margin-bottom: 16px;
-      background: linear-gradient(135deg, #2563eb, #4f46e5);
-      color: #fff; box-shadow: 0 4px 24px rgba(79,70,229,0.4);
+      width: 100%;
+      max-width: 320px;
+      padding: 16px 0;
+      font-family: 'Baloo 2', cursive;
+      font-size: 1.1rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 16px;
+      letter-spacing: 0.5px;
     }
-    .btn-start:hover { transform: translateY(-2px); }
-    .info-box {
-      width: 100%; max-width: 480px; background: #1a2535;
-      border-left: 3px solid #60aaff; border-radius: 8px;
-      padding: 12px 16px; margin-bottom: 16px;
-      font-size: 0.82rem; color: #8899aa; line-height: 1.6;
+    .btn-start.start {
+      background: linear-gradient(135deg, #2563eb, var(--accent2));
+      color: #fff;
+      box-shadow: 0 4px 24px rgba(79,156,249,0.3);
     }
-    .info-box strong { color: #60aaff; }
+    .btn-start.start:hover { transform: translateY(-2px); box-shadow: 0 6px 32px rgba(79,156,249,0.45); }
+    .btn-start.stop {
+      background: linear-gradient(135deg, #7f1d1d, var(--red));
+      color: #fff;
+    }
+    .btn-start.stop:hover { transform: translateY(-2px); }
+    .btn-start:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    /* ---------------------------------------------------------------- Transcript */
     .transcript {
-      width: 100%; max-width: 480px; background: #1a2535;
-      border-radius: 14px; padding: 16px; min-height: 80px;
-      max-height: 200px; overflow-y: auto; margin-top: 8px;
+      width: 100%;
+      max-width: 460px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px;
+      min-height: 70px;
+      max-height: 180px;
+      overflow-y: auto;
+      scroll-behavior: smooth;
     }
-    .transcript-line { font-size: 0.85rem; margin-bottom: 6px; padding: 6px 10px; border-radius: 8px; }
-    .transcript-line.student { background: #1e3a5f; color: #93c5fd; }
-    .transcript-line.vidya   { background: #1e3a28; color: #86efac; }
-    .transcript-empty { color: #2a3a50; font-size: 0.85rem; text-align: center; padding-top: 8px; }
-    .footer { margin-top: 28px; font-size: 0.75rem; color: #2a3a50; text-align: center; }
-    input[type=text] {
-      width: 100%; padding: 12px; border-radius: 10px;
-      border: 1px solid #2a3a50; background: #1a2535;
-      color: #fff; font-size: 0.9rem; margin-bottom: 8px;
+    .transcript::-webkit-scrollbar { width: 4px; }
+    .transcript::-webkit-scrollbar-track { background: transparent; }
+    .transcript::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .transcript-line {
+      font-size: 0.82rem;
+      line-height: 1.5;
+      margin-bottom: 5px;
+      padding: 6px 10px;
+      border-radius: 8px;
     }
-    .connect-btn {
-      width: 100%; padding: 12px; background: #2563eb; color: #fff;
-      border: none; border-radius: 10px; font-size: 1rem; cursor: pointer;
+    .transcript-line.student {
+      background: rgba(79,156,249,0.1);
+      border-left: 2px solid var(--accent);
+      color: #93c5fd;
+    }
+    .transcript-line.vidya {
+      background: rgba(34,197,94,0.08);
+      border-left: 2px solid var(--green);
+      color: #86efac;
+    }
+    .transcript-empty {
+      color: var(--border);
+      font-size: 0.8rem;
+      text-align: center;
+      padding: 8px 0;
+    }
+
+    /* ---------------------------------------------------------------- Stars */
+    .stars-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 14px;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .star { color: var(--yellow); font-size: 1rem; }
+
+    /* ---------------------------------------------------------------- Footer */
+    .footer {
+      margin-top: 24px;
+      font-size: 0.7rem;
+      color: var(--border);
+      text-align: center;
+      letter-spacing: 0.5px;
     }
   </style>
 </head>
 <body>
+
   <div class="header">
     <h1>🎓 VIDYA</h1>
     <p>Your personal teacher — speak to start learning</p>
   </div>
 
-  <!-- IMAGE CARD — reserved for Phase 4 Visual Learning -->
-  <div class="image-card">
+  <!-- Image Card — Visual Learning -->
+  <div class="image-card" id="imageCard">
+    <img id="lessonImage" src="" alt="Learning visual" />
     <div class="placeholder">
       <span class="icon">📚</span>
       <p>Your lesson visuals<br>will appear here</p>
     </div>
+    <div class="asset-label" id="assetLabel"></div>
   </div>
 
-  <div class="info-box" id="infoBox">
-    <strong>Before you start:</strong> Make sure both terminals are running —
-    <strong>Terminal 1:</strong> <code>uvicorn backend:app --reload --port 8000</code> &nbsp;|&nbsp;
-    <strong>Terminal 2:</strong> <code>python agent.py</code>
+  <!-- Stars -->
+  <div class="stars-bar" id="starsBar" style="display:none">
+    <span>⭐ Stars earned:</span>
+    <span id="starsCount">0</span>
   </div>
 
+  <!-- Status -->
   <div class="status-bar">
     <div class="status-dot" id="statusDot"></div>
-    <span class="status-text" id="statusText">Ready</span>
+    <span class="status-text" id="statusText">Ready to connect</span>
   </div>
 
-  <button class="btn-start" id="mainBtn" onclick="startSession()">
+  <!-- Button -->
+  <button class="btn-start start" id="mainBtn" onclick="toggleSession()">
     🎙️ Start Learning with Vidya
   </button>
 
-  <div id="urlSection" style="display:none; width:100%; max-width:480px; margin-bottom:16px;">
-    <p style="color:#8899aa; font-size:0.85rem; margin-bottom:8px;">
-      Copy the URL printed in <strong>Terminal 2</strong> (python agent.py) and paste it below:
-    </p>
-    <input type="text" id="agentUrlInput" placeholder="e.g. http://localhost:7860 or the URL shown in terminal" />
-    <button class="connect-btn" onclick="connectToAgent()">Connect to Vidya →</button>
-  </div>
-
+  <!-- Transcript -->
   <div class="transcript" id="transcript">
-    <div class="transcript-empty">What you and Vidya say will appear here...</div>
+    <div class="transcript-empty" id="transcriptEmpty">
+      What you and Vidya say will appear here...
+    </div>
   </div>
 
-  <div class="footer">Vidya — AI Literacy Bot &nbsp;•&nbsp; Phase 1</div>
+  <div class="footer">Vidya — AI Literacy Bot &nbsp;•&nbsp; Phase 4 — Visual Learning</div>
 
   <script>
+    // ================================================================
+    // State
+    // ================================================================
+    let isConnected = false;
+    let ws = null;           // WebSocket for visual signals
+    let sessionId = null;
+    let stars = 0;
+
+    // ================================================================
+    // UI helpers
+    // ================================================================
     function setStatus(state, text) {
       document.getElementById("statusDot").className = "status-dot " + state;
       document.getElementById("statusText").textContent = text;
     }
 
-    function startSession() {
-      document.getElementById("urlSection").style.display = "block";
-      document.getElementById("mainBtn").style.display = "none";
-      setStatus("connecting", "Paste the agent URL to connect...");
+    function addTranscript(speaker, text) {
+      const container = document.getElementById("transcript");
+      const empty = document.getElementById("transcriptEmpty");
+      if (empty) empty.remove();
+      const line = document.createElement("div");
+      line.className = "transcript-line " + speaker;
+      line.textContent = (speaker === "vidya" ? "🎓 Vidya: " : "👤 You: ") + text;
+      container.appendChild(line);
+      container.scrollTop = container.scrollHeight;
     }
 
-    function connectToAgent() {
-      const url = document.getElementById("agentUrlInput").value.trim();
-      if (!url) { alert("Please paste the agent URL from Terminal 2."); return; }
+    // ================================================================
+    // Visual Learning — ACTIVE in Phase 4
+    // ================================================================
+    function showImage(assetKey) {
+      const card  = document.getElementById("imageCard");
+      const img   = document.getElementById("lessonImage");
+      const label = document.getElementById("assetLabel");
+
+      img.src = `/assets/${assetKey}.svg`;
+      img.onerror = () => {
+        // Try PNG fallback
+        img.src = `/assets/${assetKey}.png`;
+        img.onerror = () => {
+          // Asset not found — hide gracefully
+          hideImage();
+          console.warn("[Visual] Asset not found:", assetKey);
+        };
+      };
+
+      card.classList.add("active");
+      label.textContent = assetKey.replace(/_/g, ' ');
+      console.log("[Visual] Showing:", assetKey);
+    }
+
+    function hideImage() {
+      const card = document.getElementById("imageCard");
+      const img  = document.getElementById("lessonImage");
+      card.classList.remove("active");
+      setTimeout(() => { img.src = ""; }, 400);
+    }
+
+    function addStar() {
+      stars++;
+      document.getElementById("starsCount").textContent = stars;
+      document.getElementById("starsBar").style.display = "flex";
+    }
+
+    // ================================================================
+    // WebSocket — connects to backend visual channel
+    // ================================================================
+    function connectVisualChannel(sid) {
+      const wsUrl = `ws://localhost:8000/ws/visual/${sid}`;
+      ws = new WebSocket(wsUrl);
+
+      ws.onopen = () => {
+        console.log("[Visual] WebSocket connected");
+        // Send keep-alive pings every 20 seconds
+        setInterval(() => {
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send("ping");
+          }
+        }, 20000);
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.show) {
+            showImage(data.show);
+          }
+          if (data.hide) {
+            hideImage();
+          }
+          if (data.star) {
+            addStar();
+          }
+        } catch (e) {
+          console.warn("[Visual] Bad WebSocket message:", event.data);
+        }
+      };
+
+      ws.onerror = (err) => {
+        console.warn("[Visual] WebSocket error — visuals disabled");
+      };
+
+      ws.onclose = () => {
+        console.log("[Visual] WebSocket closed");
+      };
+    }
+
+    // ================================================================
+    // Session management
+    // ================================================================
+    async function toggleSession() {
+      if (isConnected) {
+        stopSession();
+      } else {
+        await startSession();
+      }
+    }
+
+    async function startSession() {
+      const btn = document.getElementById("mainBtn");
+      btn.disabled = true;
       setStatus("connecting", "Connecting to Vidya...");
-      window.open(url, "_blank");
+
+      try {
+        // Get session ID from backend
+        const response = await fetch("/api/session/start", { method: "POST" });
+        if (!response.ok) throw new Error(`Backend error: ${response.status}`);
+        const data = await response.json();
+        sessionId = data.session_id;
+
+        // Connect visual WebSocket
+        connectVisualChannel(sessionId);
+
+        // Redirect to Pipecat's WebRTC client
+        // The agent runs at localhost:7860
+        isConnected = true;
+        setStatus("connected", "Visual channel ready!");
+        btn.textContent = "🔴 End Session";
+        btn.className = "btn-start stop";
+        btn.disabled = false;
+
+        // Open Pipecat client in same window
+        window.location.href = "http://localhost:7860/client";
+
+      } catch (err) {
+        console.error("Session start failed:", err);
+        setStatus("error", "Could not connect — is the agent running?");
+        btn.textContent = "🎙️ Start Learning with Vidya";
+        btn.className = "btn-start start";
+        btn.disabled = false;
+      }
     }
 
-    // Phase 4 placeholders
-    function showImage(assetKey) { console.log("[Visual Phase 4] show:", assetKey); }
-    function hideImage() { console.log("[Visual Phase 4] hide"); }
+    function stopSession() {
+      if (ws) { ws.close(); ws = null; }
+      hideImage();
+      isConnected = false;
+      setStatus("", "Session ended — see you next time!");
+      const btn = document.getElementById("mainBtn");
+      btn.textContent = "🎙️ Start Learning with Vidya";
+      btn.className = "btn-start start";
+    }
   </script>
+
 </body>
 </html>

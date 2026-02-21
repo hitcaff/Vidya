@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
+  <!-- Background -->
+  <rect width="400" height="300" fill="#0f1923" rx="20"/>
+  
+  <!-- Colored circle -->
+  <circle cx="200" cy="130" r="90" fill="#DDA0DD" opacity="0.15"/>
+  <circle cx="200" cy="130" r="75" fill="#DDA0DD" opacity="0.2"/>
+  
+  <!-- Big letter -->
+  <text x="200" y="160" 
+        font-family="Georgia, serif" 
+        font-size="130" 
+        font-weight="bold"
+        fill="#DDA0DD"
+        text-anchor="middle"
+        dominant-baseline="middle">F</text>
+  
+  <!-- Word label -->
+  <text x="200" y="245" 
+        font-family="Arial, sans-serif" 
+        font-size="22" 
+        fill="#ffffff"
+        text-anchor="middle"
+        opacity="0.85">F is for Fish</text>
+  
+  <!-- Small letter sound hint -->
+  <text x="200" y="275" 
+        font-family="Arial, sans-serif" 
+        font-size="14" 
+        fill="#DDA0DD"
+        text-anchor="middle"
+        opacity="0.7">"f" says the sound "f"</text>
+</svg>

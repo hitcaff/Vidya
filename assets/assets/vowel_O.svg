@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
+  <rect width="400" height="300" fill="#0f1923" rx="20"/>
+  <rect x="10" y="10" width="380" height="280" fill="none" stroke="#FAD7A0" stroke-width="3" rx="16" opacity="0.5"/>
+  <text x="200" y="40" font-family="Arial" font-size="16" fill="#FAD7A0" text-anchor="middle" opacity="0.8">✦ VOWEL ✦</text>
+  <circle cx="200" cy="140" r="85" fill="#FAD7A0" opacity="0.18"/>
+  <text x="200" y="168" font-family="Georgia, serif" font-size="130" font-weight="bold" fill="#FAD7A0" text-anchor="middle" dominant-baseline="middle">O</text>
+  <text x="200" y="245" font-family="Arial" font-size="20" fill="#ffffff" text-anchor="middle">O is for Orange</text>
+  <text x="200" y="275" font-family="Arial" font-size="13" fill="#FAD7A0" text-anchor="middle" opacity="0.7">A  E  I  O  U  — The 5 vowels</text>
+</svg>

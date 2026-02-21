@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
+  <rect width="400" height="300" fill="#0f1923" rx="20"/>
+  <circle cx="200" cy="130" r="90" fill="#45B7D1" opacity="0.12"/>
+  <circle cx="182" cy="80" r="10" fill="#45B7D1" opacity="0.6"/>
+  <circle cx="218" cy="80" r="10" fill="#45B7D1" opacity="0.6"/>
+  
+  <text x="200" y="175" 
+        font-family="Georgia, serif" 
+        font-size="120" 
+        font-weight="bold"
+        fill="#45B7D1"
+        text-anchor="middle"
+        dominant-baseline="middle">2</text>
+  <text x="200" y="245" 
+        font-family="Arial, sans-serif" 
+        font-size="24" 
+        fill="#ffffff"
+        text-anchor="middle"
+        opacity="0.85">Two</text>
+  <text x="200" y="275" 
+        font-family="Arial, sans-serif" 
+        font-size="13" 
+        fill="#45B7D1"
+        text-anchor="middle"
+        opacity="0.6">Count: ● • ●</text>
+</svg>
