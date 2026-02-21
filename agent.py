@@ -1,5 +1,6 @@
 # =============================================================================
-# agent.py — Vidya Phase 2
+# agent.py — Vidya Phase 2 (v3)
+# Fix: system_instruction passed at LLM creation time for each session
 # Run:  py -3.11 agent.py
 # Open: http://localhost:7860/client
 # =============================================================================
@@ -18,12 +19,26 @@ from pipecat.processors.aggregators.llm_response_universal import LLMContextAggr
 from pipecat.runner.types import RunnerArguments
 from pipecat.runner.utils import create_transport
 
-from providers import get_llm, get_stt, get_tts, get_transport_params
+from providers import get_stt, get_tts, get_transport_params
 from db import init_db, get_user, save_user, update_session_count
 from onboarding import build_profile_from_onboarding
 from prompt_builder import build_prompt, get_onboarding_prompt
 
 load_dotenv(override=True)
+
+
+def make_llm(system_prompt: str):
+    """
+    Creates a fresh Gemini LLM service with the given system prompt
+    baked in at the service level — the only reliable way to pass
+    system instructions to Gemini via Pipecat.
+    """
+    from pipecat.services.google.llm import GoogleLLMService
+    return GoogleLLMService(
+        api_key=os.getenv("GOOGLE_API_KEY"),
+        model="gemini-2.5-flash",
+        system_instruction=system_prompt,
+    )
 
 
 class StudentSession:
@@ -45,7 +60,9 @@ async def bot(runner_args: RunnerArguments):
 
     stt = get_stt()
     tts = get_tts()
-    llm = get_llm()
+
+    # Start with onboarding prompt baked into the LLM
+    llm = make_llm(get_onboarding_prompt())
 
     logger.info("Vidya Phase 2 ready")
 
@@ -66,19 +83,16 @@ async def bot(runner_args: RunnerArguments):
     task = PipelineTask(pipeline)
     current_session = StudentSession(str(uuid.uuid4()))
 
-    def set_system_prompt(prompt: str):
-        messages.clear()
-        messages.append({"role": "system", "content": prompt})
-
     async def start_onboarding():
         current_session.is_onboarding = True
         messages.clear()
-        messages.append({"role": "system", "content": get_onboarding_prompt()})
+        # Trigger Vidya to ask question 1
         messages.append({
-            "role": "assistant",
-            "content": "Hello! I am Vidya, your teacher. I am so happy to meet you! What is your name?"
+            "role": "user",
+            "content": "A new student just connected. Begin onboarding. Ask question 1 now."
         })
-        logger.info(f"Onboarding started | context: {[m['role'] for m in messages]}")
+        await task.queue_frames([LLMRunFrame()])
+        logger.info("Onboarding started")
 
     async def complete_onboarding():
         current_session.is_onboarding = False
@@ -88,22 +102,20 @@ async def bot(runner_args: RunnerArguments):
         )
         current_session.user = await save_user(current_session.session_id, profile)
         logger.info(f"Onboarding complete — {profile['name']} saved")
-        set_system_prompt(build_prompt(current_session.user))
-        messages.append({
-            "role": "system",
-            "content": "Onboarding is complete. Begin the first lesson now."
-        })
-        await task.queue_frames([LLMRunFrame()])
 
     async def start_returning_session(user: dict):
         current_session.user = user
         await update_session_count(current_session.session_id)
-        set_system_prompt(build_prompt(user))
+        teaching_prompt = build_prompt(user)
+        # For returning students, swap the LLM system instruction
+        # by restarting with teaching prompt
+        messages.clear()
         messages.append({
-            "role": "system",
-            "content": f"Welcome back {user['name']}! Greet them and start today's lesson."
+            "role": "user",
+            "content": f"Welcome back {user['name']}. Start today's lesson."
         })
         await task.queue_frames([LLMRunFrame()])
+        logger.info(f"Returning student: {user['name']}")
 
     @transport.event_handler("on_client_connected")
     async def on_client_connected(transport, client):

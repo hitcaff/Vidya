@@ -19,12 +19,12 @@ from pipecat.transports.base_transport import TransportParams
 load_dotenv(override=True)
 
 
-def get_llm():
+def get_llm(system_prompt: str = None):
     from pipecat.services.google.llm import GoogleLLMService
     return GoogleLLMService(
         api_key=os.getenv("GOOGLE_API_KEY"),
         model="gemini-2.5-flash",
-        system_instruction="You are Vidya, a warm and patient teacher for uneducated adults. You only teach. You never do small talk. Your first question is always: What is your name?",
+        system_instruction=system_prompt or "You are Vidya, a teacher. Only teach. Never say 'How may I help you'.",
     )
 
 
