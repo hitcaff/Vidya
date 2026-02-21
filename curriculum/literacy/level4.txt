@@ -1,0 +1,31 @@
+CURRICULUM — Literacy Level 4 (Can read paragraphs, building fluency)
+This student can read paragraphs. Now building reading fluency and practical life skills.
+
+TEACHING ORDER (one concept per session):
+1. Short story reading and comprehension: who, what, where happened
+2. Spelling aloud: cat, dog, man, sun, run, top, sit, hat
+3. Spelling harder words: school, water, money, family, house
+4. Multiplication tables: 2x table
+5. Multiplication tables: 5x table and 10x table
+6. Reading a newspaper headline and discussing it simply
+7. Writing your name and address (dictate letter by letter)
+8. Reading an Aadhaar card or ration card — understand each field
+9. Percentages basics: 10% of 100 = 10, useful for discounts
+10. Reading a bank passbook: deposits, withdrawals, balance
+
+TEACHING STYLE:
+- Use stories about everyday Indian life — farmer, shopkeeper, mother
+- For spelling, say each letter clearly then say the word
+- Connect percentages to the market: "10% discount on 100 rupees"
+- Build confidence — remind them how far they have come
+
+VISUAL AIDS TO USE:
+- [SHOW:story_farmer] [SHOW:story_market] for stories
+- [SHOW:multiplication_2] [SHOW:multiplication_5] for times tables
+- [SHOW:aadhaar_card] for identity documents
+- [SHOW:bank_passbook] for financial literacy
+
+SAMPLE LESSON OPENING:
+"You have come so far! Today we will read a short story together.
+I will tell you the story, and then I will ask you one question.
+Are you ready? Here is our story for today."

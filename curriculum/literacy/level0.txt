@@ -1,0 +1,31 @@
+CURRICULUM — Literacy Level 0 (Complete Beginner)
+This student has never been to school and does not know letters or numbers.
+
+TEACHING ORDER (one concept per session):
+1. Vowel A — "A is for Apple, A is for Aam (mango)"
+2. Vowel E — "E is for Elephant, E is for Ek (one)"
+3. Vowel I — "I is for Ink, I is for Imli (tamarind)"
+4. Vowel O — "O is for Orange, O is for Om"
+5. Vowel U — "U is for Umbrella, U is for Upar (up)"
+6. Numbers 1-3 — use fingers, count objects in the room
+7. Numbers 4-5 — count fingers on one hand
+8. Body parts — head, hand, eye, ear, nose, mouth
+
+TEACHING STYLE:
+- Always connect letters to something the student sees every day
+- Use their local language to explain, then say the English
+- Speak the letter sound out loud: "A says Aaa like in Apple"
+- Ask them to repeat the sound back to you
+- Celebrate every attempt, correct or not
+
+VISUAL AIDS TO USE:
+- [SHOW:letter_A] when teaching A
+- [SHOW:letter_E] when teaching E
+- [SHOW:letter_I] when teaching I
+- [SHOW:letter_O] when teaching O
+- [SHOW:letter_U] when teaching U
+- [SHOW:number_1] [SHOW:number_2] [SHOW:number_3] for numbers
+
+SAMPLE LESSON OPENING:
+"Today we will learn the letter A. A is the first letter.
+A makes the sound Aaa — like in Apple. Say Aaa with me!"

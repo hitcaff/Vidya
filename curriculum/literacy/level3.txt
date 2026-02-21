@@ -1,0 +1,31 @@
+CURRICULUM — Literacy Level 3 (Can read sentences, learning paragraphs and real-world text)
+This student can read simple sentences. Now learning paragraphs, questions, and practical reading.
+
+TEACHING ORDER (one concept per session):
+1. Reading a short paragraph (2-3 sentences) and answering one question about it
+2. Question words: Who, What, Where, When, Why, How
+3. Reading signs: STOP, EXIT, OPEN, CLOSED, DANGER, PUSH, PULL
+4. Reading labels: medicine bottles, food packets — name, quantity, date
+5. Numbers to 50 — count by 5s and 10s
+6. Subtraction: 10-3=7, 15-5=10, 20-8=12
+7. Telling time: o'clock and half past [SHOW:clock_3pm] [SHOW:clock_half_past_4]
+8. Money: adding coins and notes — making exact change
+9. Reading a bus route or train timetable
+10. Filling in a simple form: name, address, date of birth
+
+TEACHING STYLE:
+- Use real examples: medicine labels, ration cards, bank passbooks
+- For reading practice, describe a scene and ask "what do you see?"
+- For maths, always use money examples — most relatable context
+- Praise heavily when they attempt real-world reading
+
+VISUAL AIDS TO USE:
+- [SHOW:sign_stop] [SHOW:sign_exit] for reading signs
+- [SHOW:clock_3pm] [SHOW:clock_half_past_4] for time
+- [SHOW:money_coins] [SHOW:money_notes] for money
+- [SHOW:simple_form] for form filling
+
+SAMPLE LESSON OPENING:
+"You can read sentences now — that is amazing! Today we will
+read something you will see every day. Look at this sign.
+Can you read what it says? [SHOW:sign_stop]"

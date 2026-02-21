@@ -1,0 +1,15 @@
+CURRICULUM — Numeracy Level 1 (Knows 1-10, learning addition and subtraction)
+
+TEACHING ORDER (one concept per session):
+1. Addition to 10: 2+3=5, 4+1=5, use fingers to count
+2. Addition to 20: 8+5=13, 9+6=15
+3. Subtraction to 10: 7-3=4, 5-2=3, "you had 7, gave 3, how many left?"
+4. Subtraction to 20: 15-6=9, 18-9=9
+5. Coins: 1 rupee, 2 rupee, 5 rupee, 10 rupee coins [SHOW:money_coins]
+6. Notes: 10, 20, 50, 100 rupee notes [SHOW:money_notes]
+7. Simple shopping: "mangoes cost 5 rupees each, buy 3, how much?"
+8. Telling time: o'clock [SHOW:clock_3pm]
+9. Telling time: half past [SHOW:clock_half_past_2]
+10. Numbers 11-50: count by tens
+
+VISUAL AIDS: [SHOW:addition_fingers] [SHOW:money_coins] [SHOW:money_notes] [SHOW:clock_3pm]

@@ -2,65 +2,40 @@
 # prompt_builder.py
 # Builds the dynamic system prompt for Vidya based on the user's profile.
 #
-# This is what makes every session feel personal and custom.
-# The prompt changes based on:
-#   - Who the student is (name, language, level)
-#   - What they are learning (subject, level)
-#   - What happened last session (summary)
+# Phase 3 update: now loads curriculum from .txt files via curriculum.py
+# instead of hardcoded strings.
 # =============================================================================
 
 from onboarding import ONBOARDING_PROMPT
+from curriculum import load_curriculum
 
-
-# =============================================================================
-# Base teacher persona — always included after onboarding
-# =============================================================================
 
 VIDYA_BASE_PERSONA = """
-You are Vidya. You are NOT a general assistant. You are ONLY a teacher.
-You have ONE job: teach the student in front of you.
-
-NEVER say things like:
-- "How are you doing today?"
-- "Is there something I can help you with?"
-- "Feel free to ask"
-- "I'm here to help"
-- "How can I assist you?"
-
-You are always in the middle of a lesson. Always. 
-If the student goes off topic, gently bring them back to learning.
-Your first words to any student are always about learning — never small talk.
+You are Vidya, a warm, endlessly patient AI literacy teacher.
+Your only purpose is to help uneducated adults and children learn.
 
 CORE RULES — never break these:
 - Speak in simple, everyday words. No jargon. No complex sentences.
 - Keep every response to 2-3 sentences maximum.
 - Always end with one simple question or small task for the student.
 - NEVER make the student feel bad for a wrong answer. Say something kind first.
-- NEVER repeat the same explanation twice — try a different approach or example.
-- Celebrate every correct answer with genuine enthusiasm.
+- NEVER repeat the same explanation twice — always try a different approach.
+- Celebrate every correct answer with genuine loud enthusiasm.
 - Always respond in the student's preferred language.
-- Teach ONE concept at a time. Never move forward until it is understood.
-- Use [SHOW:asset_key] at the end of sentences when showing a visual would help.
-  Example: "This is the letter A. A is for Apple. [SHOW:letter_A]"
+- Teach ONE concept at a time. Never move on until it is understood.
+- Use [SHOW:asset_key] when showing a visual would help.
+  Example: "This is the letter A. [SHOW:letter_A]"
+- NEVER say "How may I help you" or "Is there anything I can assist with".
+- You are ALWAYS in the middle of a lesson. Always.
+- NEVER show internal thoughts. Never write things in brackets like (Internal tracking...).Just speak naturally as a teacher.
 """
 
 
-# =============================================================================
-# Prompt builder function
-# =============================================================================
-
 def build_prompt(user: dict, last_session_summary: str = None) -> str:
     """
-    Builds a fully personalised system prompt for this user.
-
-    Args:
-        user: User profile dict from the database
-        last_session_summary: Optional summary of what was taught last time
-
-    Returns:
-        Complete system prompt string
+    Builds a fully personalised system prompt for this student.
+    Loads curriculum content from .txt files based on subject and level.
     """
-
     name     = user.get("name", "the student")
     language = user.get("preferred_language", "unknown")
     subject  = user.get("current_subject", "literacy")
@@ -71,7 +46,9 @@ def build_prompt(user: dict, last_session_summary: str = None) -> str:
     path     = user.get("learning_path", ["literacy"])
     topics   = user.get("topics_completed", [])
 
-    # Build the student context block
+    # Load curriculum from file
+    curriculum_content = load_curriculum(subject, level)
+
     student_context = f"""
 STUDENT PROFILE:
 - Name: {name}
@@ -82,138 +59,43 @@ STUDENT PROFILE:
 - Learning path: {' → '.join(path)}
 - Sessions completed: {sessions}
 - Stars earned: {stars} ⭐
-- Topics completed so far: {', '.join(topics) if topics else 'None yet — this is their journey beginning'}
+- Topics completed: {', '.join(topics) if topics else 'None yet — this is the beginning'}
 """
 
-    # Build the curriculum context block based on subject and level
-    curriculum = _get_curriculum_context(subject, level)
-
-    # Build last session block if available
     last_session = ""
     if last_session_summary:
         last_session = f"""
-LAST SESSION SUMMARY:
+LAST SESSION:
 {last_session_summary}
-
-Start today by briefly reviewing what was taught last time before introducing anything new.
+Briefly review last session before introducing anything new.
 """
-    else:
-        if sessions == 1:
-            last_session = """
-This is their FIRST session after onboarding.
-Start by welcoming them warmly by name.
-Then gently begin with the very first concept in their curriculum.
+    elif sessions <= 1:
+        last_session = """
+FIRST SESSION AFTER ONBOARDING:
+Welcome them warmly by name. Then begin the very first concept in their curriculum.
 """
 
-    # Build the full prompt
     prompt = f"""
 {VIDYA_BASE_PERSONA}
 
 {student_context}
 
-{curriculum}
+CURRICULUM FOR TODAY:
+{curriculum_content}
 
 {last_session}
 
-TODAY'S SESSION GOAL:
-Teach exactly ONE new concept from the curriculum above.
-Follow this loop for every concept:
-1. TEACH   — Introduce the concept with a simple daily life example + [SHOW:visual] if relevant
-2. CHECK   — Ask one simple question to see if they understood
-3. EVALUATE — Right answer → celebrate and continue | Wrong → try a completely different approach
-4. CELEBRATE — Every correct answer deserves loud genuine praise
-5. PROGRESS — When concept is mastered, gently introduce the next one
+TEACHING LOOP — follow for every concept:
+1. TEACH    — Introduce concept with a daily life example + [SHOW:visual] if relevant
+2. CHECK    — Ask one simple question
+3. EVALUATE — Right answer → celebrate loudly | Wrong → try completely different approach
+4. NEVER repeat the same explanation — always use a new example
+5. PROGRESS — When mastered, move to the next concept in the curriculum
 
-Remember: {name} is counting on you. Your patience and warmth is everything.
+{name} is counting on you. Be warm, patient, and celebrate every small win.
 """
-
     return prompt.strip()
 
 
 def get_onboarding_prompt() -> str:
-    """Returns the onboarding prompt for new users."""
     return ONBOARDING_PROMPT
-
-
-# =============================================================================
-# Curriculum context — what to teach at each subject + level
-# =============================================================================
-
-def _get_curriculum_context(subject: str, level: int) -> str:
-    """
-    Returns the teaching focus for this subject and level.
-    In Phase 3 this will load from .txt files.
-    For Phase 2 it uses built-in strings.
-    """
-
-    curricula = {
-        "literacy": {
-            0: """
-CURRICULUM — Literacy Level 0 (Complete Beginner):
-- Teach vowels: A, E, I, O, U — one per session
-- Use simple relatable examples: A for Apple, E for Elephant
-- Teach numbers 1-5 using fingers
-- Body parts: head, hand, eye, ear, nose
-- Start with: "Today we will learn the letter A."
-""",
-            1: """
-CURRICULUM — Literacy Level 1 (Knows some vowels):
-- Teach consonants: B, C, D, F, G — 2-3 per session
-- 3-letter words: cat, bat, mat, hat, rat
-- Numbers 6-10
-- Days of the week: Monday, Tuesday...
-- Start with a quick review of vowels before introducing consonants.
-""",
-            2: """
-CURRICULUM — Literacy Level 2 (Knows letters):
-- Simple 3-letter words and phonics: sound out each letter
-- Short sentences: "The cat sat." "I see a dog."
-- Numbers 11-20 and simple addition: 2+3=5
-- Months of the year
-""",
-            3: """
-CURRICULUM — Literacy Level 3 (Can read words):
-- Simple sentences and questions: "What is your name?" "Where do you live?"
-- Short paragraphs: 2-3 sentences
-- Numbers to 50, subtraction, telling time
-- Reading signs: EXIT, STOP, OPEN, CLOSED
-""",
-            4: """
-CURRICULUM — Literacy Level 4 (Can read sentences):
-- Short stories and comprehension
-- Spelling words aloud
-- Numbers to 100, multiplication tables 1-5
-- Reading forms, labels, bus routes
-""",
-        },
-        "numeracy": {
-            0: """
-CURRICULUM — Numeracy Level 0:
-- Counting 1-10 using fingers and visual aids [SHOW:number_1] etc.
-- More vs less: which group has more?
-- Shapes: circle, square, triangle [SHOW:shapes]
-- Teach using everyday objects: stones, fruits, fingers
-""",
-            1: """
-CURRICULUM — Numeracy Level 1:
-- Addition to 20: 5+3=8
-- Subtraction to 10: 7-3=4
-- Coins and notes: recognising money [SHOW:money_coins]
-- Telling time: hour and half hour [SHOW:clock_3pm]
-""",
-        },
-        "life_skills": {
-            0: """
-CURRICULUM — Life Skills Level 0:
-- Days of the week and months
-- Reading simple signs: STOP, EXIT, DANGER
-- Filling your name on a form
-- Counting money for daily purchases
-""",
-        },
-    }
-
-    subject_data = curricula.get(subject, curricula["literacy"])
-    level_data   = subject_data.get(level, subject_data.get(0, ""))
-
-    return f"WHAT TO TEACH TODAY:\n{level_data}"

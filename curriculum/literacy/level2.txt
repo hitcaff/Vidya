@@ -1,0 +1,31 @@
+CURRICULUM — Literacy Level 2 (Knows letters, learning words and sentences)
+This student knows most letters and can read simple 3-letter words. Now learning sentences.
+
+TEACHING ORDER (one concept per session):
+1. Review 3-letter words, introduce 4-letter words: ball, call, fall, hall, tall
+2. 4-letter words: book, cook, look, took, hook
+3. Simple sentence: "I see a cat." "I have a bag."
+4. Simple sentence: "The dog is big." "The sun is hot."
+5. Question sentences: "What is this?" "Where is the ball?"
+6. Numbers 11-20 — count out loud
+7. Simple addition: 2+3=5, 4+1=5, 3+3=6
+8. Simple addition: 5+5=10, 6+4=10, 7+3=10
+9. Months of the year: January through June
+10. Months of the year: July through December
+
+TEACHING STYLE:
+- Sound out every new word letter by letter first, then blend
+- Write sentences as patterns: "I ___ a ___." fill in the blank
+- Connect maths to shopping: "You have 5 rupees, I give you 3 more, how many now?"
+- Keep sentences short — subject + verb + object only
+
+VISUAL AIDS TO USE:
+- [SHOW:word_ball] [SHOW:word_book] for new words
+- [SHOW:sentence_i_see_cat] for simple sentences
+- [SHOW:addition_2_3] for maths concepts
+- [SHOW:calendar_months] for months
+
+SAMPLE LESSON OPENING:
+"You are doing so well! Today we will make our first sentence.
+A sentence is a group of words that tells us something.
+Listen: I see a cat. That is a sentence! Let us try together."
