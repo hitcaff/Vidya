@@ -1,13 +1,11 @@
 # =============================================================================
-# agent.py — Vidya Phase 5
-# Added: Session tracking — Vidya remembers what was taught each session
+# agent.py — Vidya Phase 5 (v6)
 # Run:  py -3.11 agent.py
 # Open: http://localhost:7860/client
 # =============================================================================
 
 import os
-import re
-import uuid
+import asyncio
 from loguru import logger
 from dotenv import load_dotenv
 
@@ -30,19 +28,25 @@ from session_tracker import SessionTracker
 
 load_dotenv(override=True)
 
+FIXED_TEST_ID = "rohit-test-001"
+
+STRICT_PREFIX = """STRICT RULES — never break these:
+- NEVER write internal thoughts, tracking notes, or anything in brackets or asterisks.
+- NEVER mix two languages in one sentence.
+- Respond ONLY in the language the student is currently speaking.
+- You are Vidya, a teacher. Always stay in character.
+
+"""
+
 
 def make_llm(system_prompt: str):
     from pipecat.services.google.llm import GoogleLLMService
     return GoogleLLMService(
         api_key=os.getenv("GOOGLE_API_KEY"),
         model="gemini-2.5-flash",
-        system_instruction=system_prompt,
+        system_instruction=STRICT_PREFIX + system_prompt,
     )
 
-
-# =============================================================================
-# Visual Signal Processor — strips [SHOW:x] tags, fires visuals, tracks them
-# =============================================================================
 
 class VisualSignalProcessor(FrameProcessor):
     def __init__(self, session_id: str, tracker: SessionTracker):
@@ -52,17 +56,13 @@ class VisualSignalProcessor(FrameProcessor):
 
     async def process_frame(self, frame, direction):
         await super().process_frame(frame, direction)
-
         if isinstance(frame, TextFrame) and direction == FrameDirection.DOWNSTREAM:
             clean_text, asset_keys = extract_visuals(frame.text)
-
             for asset_key in asset_keys:
                 await visual_channel.send_show(self.session_id, asset_key)
-                self.tracker.record_visual(asset_key)   # ← Track it!
-
+                self.tracker.record_visual(asset_key)
             if clean_text != frame.text:
                 frame = TextFrame(clean_text)
-
         await self.push_frame(frame, direction)
 
 
@@ -71,7 +71,6 @@ class StudentSession:
         self.session_id = session_id
         self.user = None
         self.is_onboarding = False
-        self.onboarding_answers = {}
         self.last_user_text = ""
         self.last_vidya_text = ""
 
@@ -87,15 +86,27 @@ async def bot(runner_args: RunnerArguments):
 
     stt = get_stt()
     tts = get_tts()
-    llm = make_llm(get_onboarding_prompt())
 
-    current_session = StudentSession(str(uuid.uuid4()))
+    current_session = StudentSession(FIXED_TEST_ID)
     tracker = SessionTracker(current_session.session_id)
+
+    # ------------------------------------------------------------------
+    # LLM container — we use a list so inner functions can replace it
+    # ------------------------------------------------------------------
+    llm_container = [make_llm(get_onboarding_prompt())]
+
+    def get_current_llm():
+        return llm_container[0]
+
+    def swap_llm(new_prompt: str):
+        llm_container[0] = make_llm(new_prompt)
+        logger.info("LLM system prompt updated")
+
     visual_processor = VisualSignalProcessor(current_session.session_id, tracker)
 
     logger.info(f"Vidya Phase 5 ready | session: {current_session.session_id}")
 
-    messages = [{"role": "system", "content": get_onboarding_prompt()}]
+    messages = []
     context = LLMContext(messages)
     context_aggregator = LLMContextAggregatorPair(context)
 
@@ -103,7 +114,7 @@ async def bot(runner_args: RunnerArguments):
         transport.input(),
         stt,
         context_aggregator.user(),
-        llm,
+        llm_container[0],
         visual_processor,
         tts,
         transport.output(),
@@ -112,19 +123,12 @@ async def bot(runner_args: RunnerArguments):
 
     task = PipelineTask(pipeline)
 
-    async def start_onboarding():
-        current_session.is_onboarding = True
-        messages.clear()
-        messages.append({"role": "user", "content": "Begin. Ask question 1."})
-        await task.queue_frames([LLMRunFrame()])
-        logger.info("Onboarding started")
-
     async def start_teaching(user: dict, last_summary: str = None):
-        """Switches Vidya from onboarding to teaching mode."""
+        current_session.is_onboarding = False
+        current_session.user = user
         teaching_prompt = build_prompt(user, last_session_summary=last_summary)
-        # Rebuild LLM with teaching prompt baked in
-        nonlocal llm
-        llm = make_llm(teaching_prompt)
+        # Update system instruction on the existing LLM in-place
+        llm_container[0]._system_instruction = STRICT_PREFIX + teaching_prompt
         messages.clear()
         if last_summary:
             messages.append({
@@ -135,7 +139,7 @@ async def bot(runner_args: RunnerArguments):
                     f"Start by briefly reviewing it, then begin today's lesson."
                 )
             })
-            logger.info(f"Returning student: {user['name']} | loading last session")
+            logger.info(f"Returning student: {user['name']} | last session loaded")
         else:
             messages.append({
                 "role": "user",
@@ -144,8 +148,46 @@ async def bot(runner_args: RunnerArguments):
                     f"Welcome {user['name']} warmly and begin their very first lesson."
                 )
             })
-            logger.info(f"First lesson: {user['name']}")
+            logger.info(f"First lesson for: {user['name']}")
         await task.queue_frames([LLMRunFrame()])
+
+    async def start_onboarding():
+        current_session.is_onboarding = True
+        messages.clear()
+        messages.append({"role": "user", "content": "Begin. Ask question 1."})
+        await task.queue_frames([LLMRunFrame()])
+        logger.info("Onboarding started")
+
+        async def auto_complete_onboarding():
+            while current_session.is_onboarding:
+                await asyncio.sleep(3)
+                user_responses = [
+                    m for m in messages
+                    if m.get("role") == "user"
+                    and m.get("content") != "Begin. Ask question 1."
+                ]
+                if len(user_responses) >= 7:
+                    logger.info("Onboarding complete — saving user")
+                    # Pick longest short response as name (avoids noise)
+                    name_candidates = [
+                        m.get("content", "") for m in user_responses[:3]
+                        if 1 < len(m.get("content", "")) < 30
+                    ]
+                    name = name_candidates[0] if name_candidates else "Friend"
+                    profile = build_profile_from_onboarding(
+                        current_session.session_id,
+                        {
+                            "name": name,
+                            "preferred_language": "unknown",
+                            "learning_goal": "literacy",
+                            "school_attended": "unknown",
+                        }
+                    )
+                    saved_user = await save_user(current_session.session_id, profile)
+                    await start_teaching(saved_user)
+                    break
+
+        asyncio.create_task(auto_complete_onboarding())
 
     async def start_returning_session(user: dict):
         current_session.user = user
@@ -166,22 +208,26 @@ async def bot(runner_args: RunnerArguments):
     async def on_client_disconnected(transport, client):
         name = current_session.user["name"] if current_session.user else "Unknown"
         logger.info(f"Student disconnected: {name}")
-
-        # Save session summary to DB
         if current_session.user and not current_session.is_onboarding:
             summary = await tracker.save()
             logger.info(f"Session summary saved: {summary[:80]}...")
-
         await visual_channel.send_hide(current_session.session_id)
         await task.cancel()
 
-    # Track conversation exchanges for the session summary
+    @transport.event_handler("on_client_closed")
+    async def on_client_closed(transport, client):
+        name = current_session.user["name"] if current_session.user else "Unknown"
+        logger.info(f"Client closed: {name}")
+        if current_session.user and not current_session.is_onboarding:
+            summary = await tracker.save()
+            logger.info(f"Session summary saved: {summary[:80]}...")
+        await task.cancel()
+
     original_assistant_push = context_aggregator.assistant().push_frame
 
     async def tracked_assistant_push(frame, direction=None):
         if isinstance(frame, TextFrame):
             current_session.last_vidya_text = frame.text
-            # Record the exchange in the tracker
             if current_session.last_user_text:
                 tracker.record_exchange(
                     current_session.last_user_text,
